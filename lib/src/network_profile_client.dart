@@ -101,12 +101,14 @@ class InspectorClient {
         .where((isolate) => isolate.name == 'main' && isolate.id != null)
         .firstOrNull
         ?.id;
-    if (id == null) throw StateError('未找到 main isolate。');
+    if (id == null) throw StateError('No main isolate is available.');
     final isolate = await _service.getIsolate(id);
     if (!(isolate.extensionRPCs ?? const <String>[]).contains(
       'ext.flutter.inspector.isWidgetTreeReady',
     )) {
-      throw StateError('当前 App 未提供 Flutter Inspector 扩展。');
+      throw StateError(
+        'This App does not provide Flutter Inspector extensions.',
+      );
     }
     return _isolateId = id;
   }

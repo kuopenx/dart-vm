@@ -95,7 +95,7 @@ void main() {
     ]);
 
     expect(result.exitCode, 0);
-    expect(result.stdout, contains('--path=<路径片段>'));
+    expect(result.stdout, contains('--path=<path-fragment>'));
   });
 
   test('documents every leaf command and its parameters', () async {
@@ -103,17 +103,17 @@ void main() {
       ['network', 'status']: [],
       ['network', 'on']: [],
       ['network', 'off']: [],
-      ['network', 'requests']: ['--path=<路径片段>'],
+      ['network', 'requests']: ['--path=<path-fragment>'],
       ['network', 'request']: ['--id=<request-id>', '--body'],
       ['ui', 'status']: [],
       ['ui', 'tree']: [],
       ['ui', 'details']: ['--id=<widget-id>'],
-      ['ui', 'layout']: ['--id=<widget-id>', '--depth=<层数>'],
+      ['ui', 'layout']: ['--id=<widget-id>', '--depth=<depth>'],
       ['ui', 'screenshot']: [
         '--id=<widget-id>',
-        '--width=<像素>',
-        '--height=<像素>',
-        '--out=<png路径>',
+        '--width=<px>',
+        '--height=<px>',
+        '--out=<png-path>',
       ],
     };
 

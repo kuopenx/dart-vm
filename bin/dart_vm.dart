@@ -10,16 +10,21 @@ Future<void> main(List<String> arguments) async {
   final runner =
       CommandRunner<void>(
           'dart-vm',
-          '通过运行中的 Dart VM Service 查看 dart:io HTTP 网络采集数据。',
+          'Inspect Dart VM Service network and Flutter Inspector data.',
         )
         ..argParser.addOption(
           'uri',
           abbr: 'u',
           valueHelp: 'VM_SERVICE_URI',
-          help: 'HTTP(S) 或 WebSocket VM Service URI；默认读取 DART_VM_SERVICE_URI。',
+          help:
+              'HTTP(S) or WebSocket VM Service URI. Defaults to DART_VM_SERVICE_URI.',
           defaultsTo: Platform.environment['DART_VM_SERVICE_URI'],
         )
-        ..argParser.addFlag('version', negatable: false, help: '输出版本号。')
+        ..argParser.addFlag(
+          'version',
+          negatable: false,
+          help: 'Print the version.',
+        )
         ..addCommand(NetworkCommand())
         ..addCommand(UiCommand());
 
@@ -36,7 +41,7 @@ Future<void> main(List<String> arguments) async {
     stderr.writeln(error.message);
     exitCode = 64;
   } catch (error) {
-    stderr.writeln('dart-vm：$error');
+    stderr.writeln('dart-vm: $error');
     exitCode = 1;
   }
 }
@@ -46,7 +51,7 @@ abstract class VmCommand extends Command<void> {
     final value = globalResults?['uri'] as String?;
     if (value == null || value.isEmpty) {
       throw UsageException(
-        '请传入 --uri <VM_SERVICE_URI>，或设置 DART_VM_SERVICE_URI。',
+        'Pass --uri <VM_SERVICE_URI> or set DART_VM_SERVICE_URI.',
         usage,
       );
     }
@@ -93,18 +98,19 @@ class UiCommand extends Command<void> {
   @override
   final name = 'ui';
   @override
-  final description = '查看 Flutter Widget 树、节点详情、布局和截图。';
+  final description =
+      'Inspect Flutter Widget trees, details, layout, and screenshots.';
   @override
-  Future<void> run() => throw UsageException('请选择一个 ui 子命令。', usage);
+  Future<void> run() => throw UsageException('Choose a ui subcommand.', usage);
 }
 
 class UiStatusCommand extends UiVmCommand {
   @override
   final name = 'status';
   @override
-  final description = '查看 Flutter Inspector 与 Widget 树是否可用。';
+  final description = 'Show Flutter Inspector and Widget tree availability.';
   @override
-  String get usageFooter => '示例：dart-vm ui status';
+  String get usageFooter => 'Example: dart-vm ui status';
   @override
   Future<void> run() => withInspector(
     (client) async => printJson({
@@ -119,9 +125,10 @@ class UiTreeCommand extends UiVmCommand {
   @override
   final name = 'tree';
   @override
-  final description = '输出根 Widget 摘要树，节点 id 可用于 details、layout 和 screenshot。';
+  final description =
+      'Print the root Widget summary tree and reusable node IDs.';
   @override
-  String get usageFooter => '示例：dart-vm ui tree';
+  String get usageFooter => 'Example: dart-vm ui tree';
   @override
   Future<void> run() => withInspector(
     (client) async => printJson(await client.call('getRootWidgetSummaryTree')),
@@ -134,7 +141,7 @@ abstract class UiNodeCommand extends UiVmCommand {
       'id',
       valueHelp: 'widget-id',
       mandatory: true,
-      help: 'Widget 节点 ID，来自 ui tree。',
+      help: 'Widget node ID from ui tree.',
     );
   }
   String get id => argResults!['id'] as String;
@@ -144,9 +151,9 @@ class UiDetailsCommand extends UiNodeCommand {
   @override
   final name = 'details';
   @override
-  final description = '输出指定 Widget 的属性与详情子树。';
+  final description = 'Print properties and the details subtree for a Widget.';
   @override
-  String get usageFooter => '示例：dart-vm ui details --id=<widget-id>';
+  String get usageFooter => 'Example: dart-vm ui details --id=<widget-id>';
   @override
   Future<void> run() => withInspector(
     (client) async =>
@@ -158,17 +165,18 @@ class UiLayoutCommand extends UiNodeCommand {
   UiLayoutCommand() {
     argParser.addOption(
       'depth',
-      valueHelp: '层数',
+      valueHelp: 'depth',
       defaultsTo: '1',
-      help: '布局子树深度。',
+      help: 'Layout subtree depth.',
     );
   }
   @override
   final name = 'layout';
   @override
-  final description = '输出指定 Widget 的 Layout Explorer 数据。';
+  final description = 'Print Layout Explorer data for a Widget.';
   @override
-  String get usageFooter => '示例：dart-vm ui layout --id=<widget-id> --depth=1';
+  String get usageFooter =>
+      'Example: dart-vm ui layout --id=<widget-id> --depth=1';
   @override
   Future<void> run() => withInspector(
     (client) async => printJson(
@@ -183,22 +191,32 @@ class UiLayoutCommand extends UiNodeCommand {
 class UiScreenshotCommand extends UiNodeCommand {
   UiScreenshotCommand() {
     argParser
-      ..addOption('width', valueHelp: '像素', mandatory: true, help: '截图最大宽度。')
-      ..addOption('height', valueHelp: '像素', mandatory: true, help: '截图最大高度。')
+      ..addOption(
+        'width',
+        valueHelp: 'px',
+        mandatory: true,
+        help: 'Maximum screenshot width.',
+      )
+      ..addOption(
+        'height',
+        valueHelp: 'px',
+        mandatory: true,
+        help: 'Maximum screenshot height.',
+      )
       ..addOption(
         'out',
-        valueHelp: 'png路径',
+        valueHelp: 'png-path',
         mandatory: true,
-        help: 'PNG 输出路径。',
+        help: 'PNG output path.',
       );
   }
   @override
   final name = 'screenshot';
   @override
-  final description = '截取指定 Widget 并写入 PNG 文件。';
+  final description = 'Capture a Widget and write it to a PNG file.';
   @override
   String get usageFooter =>
-      '示例：dart-vm ui screenshot --id=<widget-id> --width=390 --height=844 --out=widget.png';
+      'Example: dart-vm ui screenshot --id=<widget-id> --width=390 --height=844 --out=widget.png';
   @override
   Future<void> run() => withInspector((client) async {
     final result = await client.call('screenshot', {
@@ -206,7 +224,9 @@ class UiScreenshotCommand extends UiNodeCommand {
       'width': argResults!['width'],
       'height': argResults!['height'],
     });
-    if (result == null) throw StateError('Inspector 未返回截图。');
+    if (result == null) {
+      throw StateError('Inspector did not return a screenshot.');
+    }
     final out = File(argResults!['out'] as String);
     await out.writeAsBytes(base64Decode(result as String));
     printJson({'out': out.path, 'bytes': await out.length()});
@@ -226,11 +246,11 @@ class NetworkCommand extends Command<void> {
   final name = 'network';
 
   @override
-  final description = '查看和控制 dart:io HTTP 网络采集数据。';
+  final description = 'Inspect and control dart:io HTTP profile data.';
 
   @override
   Future<void> run() {
-    throw UsageException('请选择一个 network 子命令。', usage);
+    throw UsageException('Choose a network subcommand.', usage);
   }
 }
 
@@ -239,10 +259,10 @@ class StatusCommand extends VmCommand {
   final name = 'status';
 
   @override
-  final description = '查看目标 isolate 与 HTTP 网络采集开关状态。';
+  final description = 'Show the target isolate and HTTP profile logging state.';
 
   @override
-  String get usageFooter => '示例：dart-vm network status';
+  String get usageFooter => 'Example: dart-vm network status';
 
   @override
   Future<void> run() => withClient((client) async {
@@ -263,13 +283,14 @@ class LoggingCommand extends VmCommand {
   String get name => enabled ? 'on' : 'off';
 
   @override
-  String get description =>
-      enabled ? '开启当前 App 运行期间的 HTTP 网络采集。' : '停止记录当前 App 后续发出的 HTTP 请求。';
+  String get description => enabled
+      ? 'Enable HTTP profiling for this App run.'
+      : 'Stop recording future HTTP requests for this App run.';
 
   @override
   String get usageFooter => enabled
-      ? '只记录开启后的 dart:io 请求；App 重启后采集会关闭。\n示例：dart-vm network on'
-      : '已记录的数据不会被清空；App 重启后数据会丢失。\n示例：dart-vm network off';
+      ? 'Only future dart:io requests are recorded; profiling resets on App restart.\nExample: dart-vm network on'
+      : 'Recorded data is retained until the App restarts or the profile is cleared.\nExample: dart-vm network off';
 
   @override
   Future<void> run() => withClient((client) async {
@@ -283,17 +304,22 @@ class LoggingCommand extends VmCommand {
 
 class RequestsCommand extends VmCommand {
   RequestsCommand() {
-    argParser.addOption('path', valueHelp: '路径片段', help: '只保留 URI 包含该文本的请求。');
+    argParser.addOption(
+      'path',
+      valueHelp: 'path-fragment',
+      help: 'Only include request URIs containing this text.',
+    );
   }
 
   @override
   final name = 'requests';
 
   @override
-  final description = '按开始时间倒序列出已记录的 HTTP 请求。';
+  final description = 'List recorded HTTP requests, newest first.';
 
   @override
-  String get usageFooter => '示例：dart-vm network requests --path=/activity/';
+  String get usageFooter =>
+      'Example: dart-vm network requests --path=/activity/';
 
   @override
   Future<void> run() => withClient((client) async {
@@ -316,13 +342,14 @@ class RequestCommand extends VmCommand {
     argParser.addOption(
       'id',
       valueHelp: 'request-id',
-      help: '要查看的请求 ID；负数 ID 可直接使用 --id=-2 的形式传入。',
+      help: 'Request ID to inspect; negative IDs work as --id=-2.',
       mandatory: true,
     );
     argParser.addFlag(
       'body',
       negatable: false,
-      help: '输出 UTF-8 请求与响应 body；不会输出 headers 或 cookies。',
+      help:
+          'Include UTF-8 request and response bodies. Headers and cookies are never printed.',
     );
   }
 
@@ -330,7 +357,7 @@ class RequestCommand extends VmCommand {
   final name = 'request';
 
   @override
-  final description = '查看指定 ID 的已记录 HTTP 请求。';
+  final description = 'Show a recorded HTTP request by ID.';
 
   @override
   String get invocation =>
@@ -342,8 +369,8 @@ class RequestCommand extends VmCommand {
 
   @override
   String get usageFooter =>
-      'request-id 来自 network requests 的 id 字段。\n'
-      '示例：dart-vm network request --id=-242378432789 --body';
+      'request-id comes from the id field in network requests.\n'
+      'Example: dart-vm network request --id=-242378432789 --body';
 
   @override
   Future<void> run() async {
