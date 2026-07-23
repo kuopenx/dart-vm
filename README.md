@@ -57,3 +57,15 @@ dart-vm network off
 dart-vm --help
 dart-vm help network
 ```
+
+## Flutter UI
+
+UI 命令依赖 Flutter Debug Inspector；先用 `ui tree` 获取节点 ID。所有查询只读，截图只会写入 `--out` 指定的文件。
+
+```bash
+dart-vm ui status
+dart-vm ui tree
+dart-vm ui details --id='<widget-id>'
+dart-vm ui layout --id='<widget-id>' --depth=1
+dart-vm ui screenshot --id='<widget-id>' --width=390 --height=844 --out=widget.png
+```

@@ -20,7 +20,8 @@ Future<void> main(List<String> arguments) async {
           defaultsTo: Platform.environment['DART_VM_SERVICE_URI'],
         )
         ..argParser.addFlag('version', negatable: false, help: '输出版本号。')
-        ..addCommand(NetworkCommand());
+        ..addCommand(NetworkCommand())
+        ..addCommand(UiCommand());
 
   try {
     if (arguments.length == 1 && arguments.single == '--version') {
@@ -66,6 +67,150 @@ abstract class VmCommand extends Command<void> {
   void printJson(Object? value) {
     stdout.writeln(const JsonEncoder.withIndent('  ').convert(value));
   }
+}
+
+abstract class UiVmCommand extends VmCommand {
+  Future<T> withInspector<T>(
+    Future<T> Function(InspectorClient client) action,
+  ) async {
+    final client = await InspectorClient.connect(uri);
+    try {
+      return await action(client);
+    } finally {
+      await client.dispose();
+    }
+  }
+}
+
+class UiCommand extends Command<void> {
+  UiCommand() {
+    addSubcommand(UiStatusCommand());
+    addSubcommand(UiTreeCommand());
+    addSubcommand(UiDetailsCommand());
+    addSubcommand(UiLayoutCommand());
+    addSubcommand(UiScreenshotCommand());
+  }
+  @override
+  final name = 'ui';
+  @override
+  final description = '查看 Flutter Widget 树、节点详情、布局和截图。';
+  @override
+  Future<void> run() => throw UsageException('请选择一个 ui 子命令。', usage);
+}
+
+class UiStatusCommand extends UiVmCommand {
+  @override
+  final name = 'status';
+  @override
+  final description = '查看 Flutter Inspector 与 Widget 树是否可用。';
+  @override
+  String get usageFooter => '示例：dart-vm ui status';
+  @override
+  Future<void> run() => withInspector(
+    (client) async => printJson({
+      'isolateId': await client.isolateId,
+      'widgetTreeReady': await client.call('isWidgetTreeReady'),
+      'widgetCreationTracked': await client.call('isWidgetCreationTracked'),
+    }),
+  );
+}
+
+class UiTreeCommand extends UiVmCommand {
+  @override
+  final name = 'tree';
+  @override
+  final description = '输出根 Widget 摘要树，节点 id 可用于 details、layout 和 screenshot。';
+  @override
+  String get usageFooter => '示例：dart-vm ui tree';
+  @override
+  Future<void> run() => withInspector(
+    (client) async => printJson(await client.call('getRootWidgetSummaryTree')),
+  );
+}
+
+abstract class UiNodeCommand extends UiVmCommand {
+  UiNodeCommand() {
+    argParser.addOption(
+      'id',
+      valueHelp: 'widget-id',
+      mandatory: true,
+      help: 'Widget 节点 ID，来自 ui tree。',
+    );
+  }
+  String get id => argResults!['id'] as String;
+}
+
+class UiDetailsCommand extends UiNodeCommand {
+  @override
+  final name = 'details';
+  @override
+  final description = '输出指定 Widget 的属性与详情子树。';
+  @override
+  String get usageFooter => '示例：dart-vm ui details --id=<widget-id>';
+  @override
+  Future<void> run() => withInspector(
+    (client) async =>
+        printJson(await client.call('getDetailsSubtree', {'arg': id})),
+  );
+}
+
+class UiLayoutCommand extends UiNodeCommand {
+  UiLayoutCommand() {
+    argParser.addOption(
+      'depth',
+      valueHelp: '层数',
+      defaultsTo: '1',
+      help: '布局子树深度。',
+    );
+  }
+  @override
+  final name = 'layout';
+  @override
+  final description = '输出指定 Widget 的 Layout Explorer 数据。';
+  @override
+  String get usageFooter => '示例：dart-vm ui layout --id=<widget-id> --depth=1';
+  @override
+  Future<void> run() => withInspector(
+    (client) async => printJson(
+      await client.call('getLayoutExplorerNode', {
+        'id': id,
+        'subtreeDepth': argResults!['depth'],
+      }),
+    ),
+  );
+}
+
+class UiScreenshotCommand extends UiNodeCommand {
+  UiScreenshotCommand() {
+    argParser
+      ..addOption('width', valueHelp: '像素', mandatory: true, help: '截图最大宽度。')
+      ..addOption('height', valueHelp: '像素', mandatory: true, help: '截图最大高度。')
+      ..addOption(
+        'out',
+        valueHelp: 'png路径',
+        mandatory: true,
+        help: 'PNG 输出路径。',
+      );
+  }
+  @override
+  final name = 'screenshot';
+  @override
+  final description = '截取指定 Widget 并写入 PNG 文件。';
+  @override
+  String get usageFooter =>
+      '示例：dart-vm ui screenshot --id=<widget-id> --width=390 --height=844 --out=widget.png';
+  @override
+  Future<void> run() => withInspector((client) async {
+    final result = await client.call('screenshot', {
+      'id': id,
+      'width': argResults!['width'],
+      'height': argResults!['height'],
+    });
+    if (result == null) throw StateError('Inspector 未返回截图。');
+    final out = File(argResults!['out'] as String);
+    await out.writeAsBytes(base64Decode(result as String));
+    printJson({'out': out.path, 'bytes': await out.length()});
+  });
 }
 
 class NetworkCommand extends Command<void> {

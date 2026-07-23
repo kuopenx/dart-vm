@@ -85,6 +85,53 @@ class NetworkProfileClient {
   Future<void> dispose() => _service.dispose();
 }
 
+class InspectorClient {
+  InspectorClient._(this._service);
+  final VmService _service;
+  String? _isolateId;
+  static const _group = 'dart-vm';
+
+  static Future<InspectorClient> connect(String uri) async =>
+      InspectorClient._(await vmServiceConnectUri(normalizeVmServiceUri(uri)));
+
+  Future<String> get isolateId async {
+    if (_isolateId case final id?) return id;
+    final vm = await _service.getVM();
+    final id = (vm.isolates ?? const <IsolateRef>[])
+        .where((isolate) => isolate.name == 'main' && isolate.id != null)
+        .firstOrNull
+        ?.id;
+    if (id == null) throw StateError('未找到 main isolate。');
+    final isolate = await _service.getIsolate(id);
+    if (!(isolate.extensionRPCs ?? const <String>[]).contains(
+      'ext.flutter.inspector.isWidgetTreeReady',
+    )) {
+      throw StateError('当前 App 未提供 Flutter Inspector 扩展。');
+    }
+    return _isolateId = id;
+  }
+
+  Future<dynamic> call(
+    String method, [
+    Map<String, dynamic> args = const {},
+  ]) async {
+    final response = await _service.callServiceExtension(
+      'ext.flutter.inspector.$method',
+      isolateId: await isolateId,
+      args: {'objectGroup': _group, ...args},
+    );
+    final result = response.json?['result'];
+    if (result is! String) return result;
+    try {
+      return jsonDecode(result);
+    } on FormatException {
+      return result;
+    }
+  }
+
+  Future<void> dispose() => _service.dispose();
+}
+
 Map<String, Object?> summarizeRequest(HttpProfileRequestRef request) {
   final endTime = request.endTime;
   final durationUs = endTime?.difference(request.startTime).inMicroseconds;
