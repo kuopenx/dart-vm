@@ -39,10 +39,10 @@ dart-vm network on
 dart-vm network requests --path '/activity/'
 
 # 查看一条请求的摘要。
-dart-vm network request '<request-id>'
+dart-vm network request --id='<request-id>'
 
 # 显式查看 UTF-8 请求与响应 body。
-dart-vm network request '<request-id>' --body
+dart-vm network request --id='<request-id>' --body
 
 # 停止记录后续请求。
 dart-vm network off

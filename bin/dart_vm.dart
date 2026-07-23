@@ -168,6 +168,12 @@ class RequestsCommand extends VmCommand {
 
 class RequestCommand extends VmCommand {
   RequestCommand() {
+    argParser.addOption(
+      'id',
+      valueHelp: 'request-id',
+      help: '要查看的请求 ID；负数 ID 可直接使用 --id=-2 的形式传入。',
+      mandatory: true,
+    );
     argParser.addFlag(
       'body',
       negatable: false,
@@ -184,19 +190,19 @@ class RequestCommand extends VmCommand {
   @override
   String get invocation =>
       '${super.invocation.replaceFirst(' [arguments]', '')} '
-      '<request-id> [arguments]';
+      '--id=<request-id> [--body]';
+
+  @override
+  bool get takesArguments => false;
 
   @override
   String get usageFooter =>
       'request-id 来自 network requests 的 id 字段。\n'
-      '示例：dart-vm network request <request-id> --body';
+      '示例：dart-vm network request --id=-242378432789 --body';
 
   @override
   Future<void> run() async {
-    final id = argResults!.rest.singleOrNull;
-    if (id == null || argResults!.rest.length != 1) {
-      throw UsageException('请且仅传入一个 request-id。', usage);
-    }
+    final id = argResults!['id'] as String;
     await withClient((client) async {
       final request = await client.request(id);
       printJson(describeRequest(request, body: argResults!['body'] as bool));

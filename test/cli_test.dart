@@ -27,7 +27,7 @@ void main() {
     expect(result.stdout, allOf(contains('status'), contains('requests')));
   });
 
-  test('documents the request ID positional argument', () async {
+  test('documents the required request ID option', () async {
     final result = await Process.run(Platform.resolvedExecutable, [
       'run',
       'bin/dart_vm.dart',
@@ -37,8 +37,22 @@ void main() {
     ]);
 
     expect(result.exitCode, 0);
-    expect(result.stdout, contains('<request-id>'));
+    expect(result.stdout, contains('--id=<request-id>'));
     expect(result.stdout, contains('network requests'));
+  });
+
+  test('accepts a negative request ID as an option value', () async {
+    final result = await Process.run(Platform.resolvedExecutable, [
+      'run',
+      'bin/dart_vm.dart',
+      'network',
+      'request',
+      '--id=-242378432789',
+    ]);
+
+    expect(result.exitCode, isNonZero);
+    expect(result.stderr, contains('DART_VM_SERVICE_URI'));
+    expect(result.stderr, isNot(contains('short name')));
   });
 
   test('documents the requests path option value', () async {

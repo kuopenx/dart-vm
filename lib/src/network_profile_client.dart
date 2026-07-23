@@ -87,6 +87,7 @@ class NetworkProfileClient {
 
 Map<String, Object?> summarizeRequest(HttpProfileRequestRef request) {
   final endTime = request.endTime;
+  final durationUs = endTime?.difference(request.startTime).inMicroseconds;
   return {
     'id': request.id,
     'method': request.method,
@@ -94,7 +95,10 @@ Map<String, Object?> summarizeRequest(HttpProfileRequestRef request) {
     'statusCode': request.response?.statusCode,
     'startTime': request.startTime.toIso8601String(),
     'endTime': endTime?.toIso8601String(),
-    'durationMs': endTime?.difference(request.startTime).inMilliseconds,
+    'durationUs': durationUs,
+    'durationMs': durationUs == null
+        ? null
+        : durationUs / Duration.microsecondsPerMillisecond,
     'complete': request.isResponseComplete,
   };
 }

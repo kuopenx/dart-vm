@@ -1,5 +1,6 @@
 import 'package:dart_vm/dart_vm.dart';
 import 'package:test/test.dart';
+import 'package:vm_service/vm_service.dart';
 
 void main() {
   group('normalizeVmServiceUri', () {
@@ -27,5 +28,23 @@ void main() {
         throwsArgumentError,
       );
     });
+  });
+
+  test('preserves microsecond request durations', () {
+    final startedAt = DateTime.utc(2026);
+    final summary = summarizeRequest(
+      HttpProfileRequestRef(
+        id: 'request-1',
+        isolateId: 'isolates/main',
+        method: 'GET',
+        uri: Uri.parse('https://example.test'),
+        events: [],
+        startTime: startedAt,
+        endTime: startedAt.add(const Duration(microseconds: 532)),
+      ),
+    );
+
+    expect(summary['durationUs'], 532);
+    expect(summary['durationMs'], 0.532);
   });
 }
