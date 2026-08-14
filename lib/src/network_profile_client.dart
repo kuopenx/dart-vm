@@ -5,22 +5,7 @@ import 'dart:typed_data';
 import 'package:vm_service/vm_service.dart';
 import 'package:vm_service/vm_service_io.dart';
 
-/// Converts an HTTP(S) VM Service URI to the WebSocket URI required by
-/// [vmServiceConnectUri]. WebSocket URIs are returned unchanged.
-String normalizeVmServiceUri(String value) {
-  final uri = Uri.parse(value);
-  final scheme = switch (uri.scheme) {
-    'http' => 'ws',
-    'https' => 'wss',
-    'ws' || 'wss' => uri.scheme,
-    _ => throw ArgumentError.value(
-      value,
-      'uri',
-      'Expected an http(s) or ws(s) VM Service URI.',
-    ),
-  };
-  return uri.replace(scheme: scheme).toString();
-}
+import 'vm_service_uri.dart';
 
 class NetworkProfileClient {
   NetworkProfileClient._(this._service);

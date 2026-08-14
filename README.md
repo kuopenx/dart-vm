@@ -1,7 +1,8 @@
 # dart-vm
 
 `dart-vm` 是一个本地调试命令行工具，用于通过 Dart VM Service 查看运行中
-Dart / Flutter App 的信息。当前提供网络采集能力；它不会发起、重放或修改业务请求。
+Dart / Flutter App 的信息。当前提供网络采集、Flutter UI Inspector 和通用 VM Service
+extension 调用能力；它不会发起、重放或修改业务请求。
 
 ## 使用前提
 
@@ -24,7 +25,17 @@ export DART_VM_SERVICE_URI='<VM_SERVICE_URI>'
 dart-vm network status
 ```
 
-两者同时存在时，`--uri` 优先。
+也可以在开始一轮调试时保存 URI，后续命令直接复用：
+
+```bash
+dart-vm config uri set '<VM_SERVICE_URI>'
+dart-vm config uri show
+dart-vm config uri clear
+```
+
+URI 来源优先级为：命令行 `--uri`、环境变量 `DART_VM_SERVICE_URI`、本地保存值。
+三者都没有时命令会报错。目标 App 重启导致保存的 URI 失效时，命令会提示重新执行
+`dart-vm config uri set '<VM_SERVICE_URI>'`。
 
 ## 网络采集
 
@@ -69,3 +80,22 @@ dart-vm ui details --id='<widget-id>'
 dart-vm ui layout --id='<widget-id>' --depth=1
 dart-vm ui screenshot --id='<widget-id>' --width=390 --height=844 --out=widget.png
 ```
+
+## 调用 VM Service extension
+
+可以调用 App 注册的任意 VM Service isolate extension。省略 `--isolate` 时优先选择名为
+`main` 的 isolate，也支持传入 isolate 名称或完整 ID。参数可重复传入，值使用 `key=value`
+格式：
+
+```bash
+dart-vm extension call \
+  --name 'ext.tada.analytics.list' \
+  --param 'limit=20'
+
+dart-vm extension call \
+  --name 'ext.tada.analytics.list' \
+  --isolate 'isolates/123' \
+  --param 'limit=20'
+```
+
+extension 的返回值会原样以 JSON 输出。是否存在某个 extension 由目标 App 决定。

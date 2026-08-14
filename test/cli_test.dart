@@ -57,6 +57,42 @@ void main() {
     }
   });
 
+  test('lists generic VM Service extension commands', () async {
+    final result = await Process.run(Platform.resolvedExecutable, [
+      'run',
+      'bin/dart_vm.dart',
+      'help',
+      'extension',
+      'call',
+    ]);
+
+    expect(result.exitCode, 0);
+    expect(
+      result.stdout,
+      allOf(
+        contains('--name=<name>'),
+        contains('--isolate=<isolate>'),
+        contains('--param=<key=value>'),
+      ),
+    );
+  });
+
+  test('lists local VM Service URI configuration commands', () async {
+    final result = await Process.run(Platform.resolvedExecutable, [
+      'run',
+      'bin/dart_vm.dart',
+      'help',
+      'config',
+      'uri',
+    ]);
+
+    expect(result.exitCode, 0);
+    expect(
+      result.stdout,
+      allOf(contains('set'), contains('show'), contains('clear')),
+    );
+  });
+
   test('documents the required request ID option', () async {
     final result = await Process.run(Platform.resolvedExecutable, [
       'run',
@@ -105,6 +141,14 @@ void main() {
       ['network', 'off']: [],
       ['network', 'requests']: ['--path=<path-fragment>'],
       ['network', 'request']: ['--id=<request-id>', '--body'],
+      ['extension', 'call']: [
+        '--name=<name>',
+        '--isolate=<isolate>',
+        '--param=<key=value>',
+      ],
+      ['config', 'uri', 'set']: [],
+      ['config', 'uri', 'show']: [],
+      ['config', 'uri', 'clear']: [],
       ['ui', 'status']: [],
       ['ui', 'tree']: [],
       ['ui', 'details']: ['--id=<widget-id>'],
