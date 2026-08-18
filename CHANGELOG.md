@@ -1,3 +1,7 @@
+## 0.2.2 - 2026-08-18
+
+- Fix the Windows installer release smoke test fixture.
+
 ## 0.2.1 - 2026-08-18
 
 - Fix Dart 3.13 static analysis compatibility in the release updater.

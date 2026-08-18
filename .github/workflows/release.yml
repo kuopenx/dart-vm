@@ -91,10 +91,10 @@ jobs:
         shell: pwsh
         run: |
           $archiveName = "dart-vm-windows-amd64.zip"
-          $script:ArchivePath = Join-Path $PWD $archiveName
-          $script:ChecksumsPath = Join-Path $PWD "build/checksums.txt"
-          $checksum = (Get-FileHash $script:ArchivePath -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$checksum  $archiveName" | Set-Content $script:ChecksumsPath -Encoding Ascii
+          $script:FixtureArchivePath = Join-Path $PWD $archiveName
+          $script:FixtureChecksumsPath = Join-Path $PWD "build/checksums.txt"
+          $checksum = (Get-FileHash $script:FixtureArchivePath -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$checksum  $archiveName" | Set-Content $script:FixtureChecksumsPath -Encoding Ascii
 
           $env:LOCALAPPDATA = Join-Path $PWD "build/installer-local-app-data"
           $env:APPDATA = Join-Path $PWD "build/installer-roaming-app-data"
@@ -111,9 +111,9 @@ jobs:
               [switch] $UseBasicParsing
             )
             if ($Uri.EndsWith("checksums.txt")) {
-              Copy-Item $script:ChecksumsPath $OutFile
+              Copy-Item $script:FixtureChecksumsPath $OutFile
             } else {
-              Copy-Item $script:ArchivePath $OutFile
+              Copy-Item $script:FixtureArchivePath $OutFile
             }
           }
 

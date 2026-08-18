@@ -1,6 +1,6 @@
 name: dart_vm
 description: A sample command-line application with basic argument parsing.
-version: 0.2.1
+version: 0.2.2
 # repository: https://github.com/my_org/my_repo
 
 environment:
