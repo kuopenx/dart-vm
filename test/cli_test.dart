@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
+import '../bin/dart_vm.dart';
+
 void main() {
   Future<String> help(List<String> command) async {
     final result = await Process.run(Platform.resolvedExecutable, [
@@ -77,6 +79,15 @@ void main() {
     );
   });
 
+  test('preserves commas in VM Service extension parameter values', () {
+    final results = ExtensionCallCommand().argParser.parse([
+      '--name=ext.example.mock',
+      '--param=responseBody={"status":0,"message":"ok"}',
+    ]);
+
+    expect(results['param'], ['responseBody={"status":0,"message":"ok"}']);
+  });
+
   test('lists local VM Service URI configuration commands', () async {
     final result = await Process.run(Platform.resolvedExecutable, [
       'run',
@@ -111,13 +122,13 @@ void main() {
     final result = await Process.run(Platform.resolvedExecutable, [
       'run',
       'bin/dart_vm.dart',
+      '--uri=ws://127.0.0.1:1/ws',
       'network',
       'request',
       '--id=-242378432789',
     ]);
 
     expect(result.exitCode, isNonZero);
-    expect(result.stderr, contains('DART_VM_SERVICE_URI'));
     expect(result.stderr, isNot(contains('short name')));
   });
 

@@ -175,6 +175,7 @@ class ExtensionCallCommand extends VmCommand {
         'param',
         help: 'Extension parameter in key=value form. May be repeated.',
         valueHelp: 'key=value',
+        splitCommas: false,
       );
   }
 
