@@ -78,7 +78,9 @@ Service URI 配置不会改变。也可以重新运行安装脚本升级。
 ## 使用前提
 
 - App 必须以支持 VM Service 的调试方式运行，且 VM Service 仍可连接。
-- 网络能力只覆盖 `dart:io` / Dio 发出的请求。
+- 网络能力只覆盖最终通过 `dart:io HttpClient` 发出的请求，例如 Flutter Native
+  环境下使用默认 IO Adapter 的 Dio 请求；不依赖 Dio，也不覆盖 Flutter Web、
+  原生侧或自定义非 `dart:io` transport。
 - 可通过 `dart-vm service list` 发现本机运行会话，也可从 Flutter 调试输出或 DevTools 获取 VM Service URI。
 
 ## 配置 VM Service URI
