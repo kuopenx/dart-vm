@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:dart_vm/dart_vm.dart';
 
-const version = '0.1.0';
+const version = '0.2.0';
 
 void _writeJson(Object? value) {
   stdout.writeln(const JsonEncoder.withIndent('  ').convert(value));
@@ -32,6 +32,8 @@ Future<void> main(List<String> arguments) async {
         ..addCommand(NetworkCommand())
         ..addCommand(ExtensionCommand())
         ..addCommand(ConfigCommand())
+        ..addCommand(ServiceCommand())
+        ..addCommand(UpgradeCommand())
         ..addCommand(UiCommand());
 
   try {
@@ -140,6 +142,81 @@ abstract class VmCommand extends Command<void> {
 }
 
 abstract class UiVmCommand extends VmCommand {}
+
+class UpgradeCommand extends Command<void> {
+  UpgradeCommand({ReleaseUpdater? updater})
+    : _updater = updater ?? ReleaseUpdater(currentVersion: version) {
+    argParser.addFlag(
+      'check',
+      negatable: false,
+      help: 'Check for a newer release without installing it.',
+    );
+  }
+
+  final ReleaseUpdater _updater;
+
+  @override
+  final name = 'upgrade';
+
+  @override
+  final description = 'Check for or install the latest dart-vm release.';
+
+  @override
+  String get usageFooter =>
+      'Examples:\n  dart-vm upgrade --check\n  dart-vm upgrade';
+
+  @override
+  Future<void> run() async {
+    if (argResults!['check'] as bool) {
+      _writeJson(await _updater.check());
+      return;
+    }
+    _writeJson(await _updater.upgrade());
+  }
+}
+
+class ServiceCommand extends Command<void> {
+  ServiceCommand({VmServiceDiscovery? discovery})
+    : _discovery = discovery ?? VmServiceDiscovery() {
+    addSubcommand(ServiceListCommand(_discovery));
+  }
+
+  final VmServiceDiscovery _discovery;
+
+  @override
+  final name = 'service';
+
+  @override
+  final description = 'Discover locally running Dart VM Services.';
+
+  @override
+  Future<void> run() =>
+      throw UsageException('Choose a service subcommand.', usage);
+}
+
+class ServiceListCommand extends Command<void> {
+  ServiceListCommand(this._discovery);
+
+  final VmServiceDiscovery _discovery;
+
+  @override
+  final name = 'list';
+
+  @override
+  final description = 'List reachable VM Services and their Flutter devices.';
+
+  @override
+  String get usageFooter => 'Example: dart-vm service list';
+
+  @override
+  Future<void> run() async {
+    final services = await _discovery.discover();
+    _writeJson({
+      'count': services.length,
+      'services': services.map((service) => service.toJson()).toList(),
+    });
+  }
+}
 
 class ExtensionCommand extends Command<void> {
   ExtensionCommand() {

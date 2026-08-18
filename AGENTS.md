@@ -1,10 +1,3 @@
-# dart-vm 开发与维护规约
-
-## 文档职责
-
-- `README.md` 面向工具使用者：说明前提、配置方式、命令和行为边界；保持中文、简洁且可直接执行。
-- `AGENTS.md` 面向参与开发和维护的 Agent：记录架构、实现、安全、测试和构建规约；不重复用户操作手册，也不写运行时状态或本机 VM 数据。
-
 ## 目标与边界
 
 - `dart-vm` 是本地开发者 CLI：通过 Dart VM Service 观察或控制**正在运行**的 Dart/Flutter VM。
@@ -49,6 +42,8 @@
 
 - 本地开发用 `dart run bin/dart_vm.dart ...`。
 - 本机二进制固定构建到 `build/dart-vm`：`mkdir -p build && dart compile exe bin/dart_vm.dart -o build/dart-vm`。
-- 全局命令入口通过 `~/.local/bin/dart-vm` 软链接指向该固定产物。日常重新编译只覆盖 `build/dart-vm`，不得复制二进制或重复创建软链接。
+- 正式版本由 `v*` Tag 触发 GitHub Actions，在目标系统原生编译并发布 ZIP 与 SHA-256 校验文件。
+- macOS / Linux 安装脚本将 Release 二进制安装到 `~/.local/bin/dart-vm`；Windows 安装到 `%LOCALAPPDATA%\dart-vm\dart-vm.exe`。安装和升级不得修改已有 VM Service URI 配置。
+- `upgrade --check` 只读；`upgrade` 必须验证对应 Release 的 SHA-256，并且仅允许替换名为 `dart-vm` / `dart-vm.exe` 的已编译可执行文件，严禁覆盖 Dart SDK。
 - 构建输出属于本地产物，不提交，也不作为源码事实源。
 - 不引入 Makefile 或其他任务编排工具；保持使用 Dart 原生命令。

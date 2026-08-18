@@ -1,4 +1,4 @@
 interface:
   display_name: "Dart VM Inspector"
-  short_description: "Inspect Flutter network, UI, and VM extensions"
-  default_prompt: "Use $dart-vm-inspect to inspect the running Flutter app with dart-vm."
+  short_description: "Discover and inspect Flutter VM services"
+  default_prompt: "Use $dart-vm-inspect to discover and inspect the running Flutter app with dart-vm."

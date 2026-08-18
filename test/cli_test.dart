@@ -104,6 +104,18 @@ void main() {
     );
   });
 
+  test('lists locally running VM Service discovery commands', () async {
+    final result = await Process.run(Platform.resolvedExecutable, [
+      'run',
+      'bin/dart_vm.dart',
+      'help',
+      'service',
+    ]);
+
+    expect(result.exitCode, 0);
+    expect(result.stdout, contains('list'));
+  });
+
   test('documents the required request ID option', () async {
     final result = await Process.run(Platform.resolvedExecutable, [
       'run',
@@ -160,6 +172,8 @@ void main() {
       ['config', 'uri', 'set']: [],
       ['config', 'uri', 'show']: [],
       ['config', 'uri', 'clear']: [],
+      ['service', 'list']: [],
+      ['upgrade']: ['--check'],
       ['ui', 'status']: [],
       ['ui', 'tree']: [],
       ['ui', 'details']: ['--id=<widget-id>'],

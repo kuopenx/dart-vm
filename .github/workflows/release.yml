@@ -1,0 +1,157 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+
+      - run: dart pub get
+      - run: sh -n install.sh
+      - run: dart format --output=none --set-exit-if-changed .
+      - run: dart analyze
+      - run: dart test
+
+  build:
+    needs: verify
+    strategy:
+      matrix:
+        include:
+          - runner: macos-15
+            platform: darwin
+            arch: arm64
+            binary: dart-vm
+          - runner: macos-15-intel
+            platform: darwin
+            arch: amd64
+            binary: dart-vm
+          - runner: ubuntu-latest
+            platform: linux
+            arch: amd64
+            binary: dart-vm
+          - runner: windows-latest
+            platform: windows
+            arch: amd64
+            binary: dart-vm.exe
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+
+      - name: Resolve dependencies
+        run: dart pub get
+
+      - name: Test release updater on target platform
+        run: dart test test/src/release_updater_test.dart
+
+      - name: Verify release version
+        shell: bash
+        run: |
+          package_version=$(awk '/^version:/ { print $2; exit }' pubspec.yaml)
+          tag_version=${GITHUB_REF_NAME#v}
+          if [ "$package_version" != "$tag_version" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match pubspec version $package_version" >&2
+            exit 1
+          fi
+
+      - name: Build executable
+        shell: bash
+        run: |
+          mkdir -p build
+          dart compile exe bin/dart_vm.dart -o "build/${{ matrix.binary }}"
+          actual_version=$("build/${{ matrix.binary }}" --version)
+          expected_version=${GITHUB_REF_NAME#v}
+          if [ "$actual_version" != "$expected_version" ]; then
+            echo "Binary version $actual_version does not match tag $GITHUB_REF_NAME" >&2
+            exit 1
+          fi
+
+      - name: Package executable
+        shell: bash
+        run: |
+          archive="dart-vm-${{ matrix.platform }}-${{ matrix.arch }}.zip"
+          if [ "${{ matrix.platform }}" = "windows" ]; then
+            powershell -NoProfile -Command "Compress-Archive -Path 'build/${{ matrix.binary }}' -DestinationPath '$archive'"
+          else
+            (cd build && zip "../$archive" "${{ matrix.binary }}")
+          fi
+
+      - name: Smoke test Windows installer
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $archiveName = "dart-vm-windows-amd64.zip"
+          $script:ArchivePath = Join-Path $PWD $archiveName
+          $script:ChecksumsPath = Join-Path $PWD "build/checksums.txt"
+          $checksum = (Get-FileHash $script:ArchivePath -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$checksum  $archiveName" | Set-Content $script:ChecksumsPath -Encoding Ascii
+
+          $env:LOCALAPPDATA = Join-Path $PWD "build/installer-local-app-data"
+          $env:APPDATA = Join-Path $PWD "build/installer-roaming-app-data"
+          $configPath = Join-Path $env:APPDATA "dart-vm/config.json"
+          New-Item -ItemType Directory -Force -Path (Split-Path $configPath) | Out-Null
+          '{"uri":"http://127.0.0.1:8181/existing-token/"}' |
+            Set-Content $configPath -Encoding Ascii
+          $configHashBefore = (Get-FileHash $configPath -Algorithm SHA256).Hash
+
+          function Invoke-WebRequest {
+            param(
+              [string] $Uri,
+              [string] $OutFile,
+              [switch] $UseBasicParsing
+            )
+            if ($Uri.EndsWith("checksums.txt")) {
+              Copy-Item $script:ChecksumsPath $OutFile
+            } else {
+              Copy-Item $script:ArchivePath $OutFile
+            }
+          }
+
+          . ./install.ps1
+
+          $installedBinary = Join-Path $env:LOCALAPPDATA "dart-vm/dart-vm.exe"
+          $actualVersion = & $installedBinary --version
+          $expectedVersion = $env:GITHUB_REF_NAME.TrimStart('v')
+          if ($actualVersion -ne $expectedVersion) {
+            throw "Installed version $actualVersion does not match $expectedVersion"
+          }
+          $configHashAfter = (Get-FileHash $configPath -Algorithm SHA256).Hash
+          if ($configHashBefore -ne $configHashAfter) {
+            throw "Installer modified the existing dart-vm configuration"
+          }
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dart-vm-${{ matrix.platform }}-${{ matrix.arch }}
+          path: dart-vm-${{ matrix.platform }}-${{ matrix.arch }}.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Generate checksums
+        run: |
+          cd artifacts
+          sha256sum *.zip > checksums.txt
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          generate_release_notes: true
+          files: |
+            artifacts/*.zip
+            artifacts/checksums.txt
