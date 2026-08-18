@@ -1,3 +1,7 @@
+## 0.2.1 - 2026-08-18
+
+- Fix Dart 3.13 static analysis compatibility in the release updater.
+
 ## 0.2.0 - 2026-08-18
 
 - Add `dart-vm service list` to discover reachable local VM Services with their Flutter device and package names.

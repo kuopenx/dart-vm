@@ -223,7 +223,7 @@ class ReleaseUpdater {
         await response.pipe(destination.openWrite());
         return const [];
       }
-      return response.fold<List<int>>(<int>[], (bytes, chunk) {
+      return await response.fold<List<int>>(<int>[], (bytes, chunk) {
         bytes.addAll(chunk);
         return bytes;
       });

@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:dart_vm/dart_vm.dart';
 
-const version = '0.2.0';
+const version = '0.2.1';
 
 void _writeJson(Object? value) {
   stdout.writeln(const JsonEncoder.withIndent('  ').convert(value));
