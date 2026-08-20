@@ -1,31 +1,23 @@
-# VM Service Isolate Extensions
+# VM Service Extension
 
-Use this capability to call a known, registered isolate extension and print its JSON result. The CLI does not expose extension discovery, so obtain the exact extension name, parameters, and response contract from project documentation, source code, or the user.
+调用应用已注册的 VM Service extension，并输出 JSON 结果。extension 名称、参数和响应结构从项目文档或源码获取。
 
-## Workflow
+## 操作方式
 
-Call the main isolate by default:
+调用 main isolate：
 
 ```bash
-dart-vm --uri "<vm-service-uri>" extension call \
+dart-vm extension call \
   --name="ext.example.status" \
   --param="limit=20"
 ```
 
-Select an isolate by name or ID when required, and repeat `--param` for multiple values:
+需要时按名称或 ID 指定 isolate；多个参数重复传入 `--param`：
 
 ```bash
-dart-vm --uri "<vm-service-uri>" extension call \
+dart-vm extension call \
   --name="<extension-name>" \
   --isolate="<isolate-name-or-id>" \
   --param="key1=value1" \
   --param="key2=value2"
 ```
-
-## Boundaries
-
-- Do not invent extension names, parameters, defaults, or response fields.
-- Confirm that the target app has registered the extension before treating a failed call as a CLI defect.
-- Treat parameters as `key=value` strings unless the extension's contract specifies its own parsing rules.
-- Preserve the JSON result for analysis, but redact secrets and personal data before displaying or saving it.
-- Read the extension-specific Skill or project documentation when one exists; use this reference only for the generic CLI invocation contract.

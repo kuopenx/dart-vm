@@ -1,50 +1,41 @@
-# Flutter UI Inspection
+# Flutter UI 检查
 
-Use this capability to inspect Flutter Widget data or capture a Widget PNG. It is read-only inspection: do not claim support for taps, scrolling, text entry, Widget selection, or other UI interaction.
+查看 Flutter Widget 树、属性和布局，或截取 Widget 图片。
 
-## Workflow
+## 操作方式
 
-1. Verify Flutter Inspector and Widget-tree availability:
+检查 Flutter Inspector 是否可用：
 
-   ```bash
-   dart-vm --uri "<vm-service-uri>" ui status
-   ```
+```bash
+dart-vm ui status
+```
 
-2. Print the root summary tree and obtain reusable Widget node IDs:
+输出 Widget 树并获取节点 ID：
 
-   ```bash
-   dart-vm --uri "<vm-service-uri>" ui tree
-   ```
+```bash
+dart-vm ui tree
+```
 
-3. Use an exact node ID from the current tree for the needed operation.
+查看 Widget 属性及其详情子树：
 
-   Inspect Widget properties and its details subtree:
+```bash
+dart-vm ui details --id="<widget-id>"
+```
 
-   ```bash
-   dart-vm --uri "<vm-service-uri>" ui details --id="<widget-id>"
-   ```
+查看 Layout Explorer 数据：
 
-   Inspect Layout Explorer data with an optional subtree depth, defaulting to `1`:
+```bash
+dart-vm ui layout --id="<widget-id>" --depth=1
+```
 
-   ```bash
-   dart-vm --uri "<vm-service-uri>" ui layout --id="<widget-id>" --depth=1
-   ```
+将 Widget 截取为 PNG：
 
-   Capture the Widget to an explicit PNG path:
+```bash
+dart-vm ui screenshot \
+  --id="<widget-id>" \
+  --width=390 \
+  --height=844 \
+  --out="<png-path>"
+```
 
-   ```bash
-   dart-vm --uri "<vm-service-uri>" ui screenshot \
-     --id="<widget-id>" \
-     --width=390 \
-     --height=844 \
-     --out="<png-path>"
-   ```
-
-4. Read the tree again after substantial UI changes before reusing a node ID.
-
-## Boundaries
-
-- Run `ui status` before diagnosing missing trees or Inspector failures.
-- Treat `width` and `height` as maximum screenshot dimensions.
-- Resolve the output path explicitly and avoid overwriting an existing image unless requested.
-- Report runtime Widget structure as observed data; do not treat it as a substitute for source-code analysis.
+界面发生较大变化后，重新读取 Widget 树，再使用新的节点 ID。

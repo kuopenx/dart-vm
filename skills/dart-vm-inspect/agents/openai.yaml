@@ -1,4 +1,4 @@
 interface:
-  display_name: "Dart VM Inspector"
-  short_description: "Discover and inspect Flutter VM services"
-  default_prompt: "Use $dart-vm-inspect to discover and inspect the running Flutter app with dart-vm."
+  display_name: "Dart VM 检查器"
+  short_description: "检查 Flutter 网络请求、Widget 树与 VM Service Extension"
+  default_prompt: "使用 $dart-vm-inspect 发现并检查当前运行中的 Flutter 应用。"
