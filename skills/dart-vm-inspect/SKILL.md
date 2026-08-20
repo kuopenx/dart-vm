@@ -30,4 +30,6 @@ Read multiple references only when the task actually crosses those capability bo
 
 ## Report results
 
+Return command output verbatim without preprocessing.
+
 State which running app or isolate was inspected when it matters. Distinguish observed runtime data from general capability descriptions. Redact tokens, cookies, authorization data, and other credentials from commands and output.
